@@ -111,12 +111,55 @@ object Main {
 
   //Zadanie 3 i 4
 
+  // def printIt jest tylko dla testu, i prezentacji, wyświetlenia
+
+  class Data(val field: String, val fieldType: Any, val value: Any){
+    def printIt(): Unit ={
+      print("["+field + ", " + fieldType.toString + ", " + value.toString+"]")
+    }
+  }
+
+  /*
+    field.setAccessible jest potrzebne inaczej dostajemy błąd odnośnie
+    braku dostępu do pól prywatnych
+
+    Dopisałem debugVars zwracające listę klasy Data, oraz debugVarsTuple
+  */
+
   trait Debug{
     def debugName(): String =
       getClass.getName
-    //Zwróci: Point
+    //return: Point
 
-    def debugVars(): String ={
+    def debugVars(): List[Data] = {
+        val listOfFields = getClass.getDeclaredFields
+        val buffer = ListBuffer[Data]()
+
+        for(field <- listOfFields){
+          field.setAccessible(true)
+          buffer += Data(field.getName.toString, field.getType, field.get(this))
+          field.setAccessible(false)
+        }
+
+        return buffer.toList
+    }
+
+
+    def debugVarsTuple(): List[(String, Any, Any)] = {
+      val listOfFields = getClass.getDeclaredFields
+      val buffer = ListBuffer[(String, Any, Any)]()
+
+      for(field <- listOfFields){
+        field.setAccessible(true)
+        buffer.+= ((field.getName.toString, field.getType, field.get(this)))
+        field.setAccessible(false)
+      }
+
+      return buffer.toList
+    }
+
+
+    def debugVarsString(): String ={
       // [[x, int, 3], [y, int, 4], [a, java.lang.String, test]]
       val listOfFields = getClass.getDeclaredFields
 
@@ -127,18 +170,38 @@ object Main {
         buffer += "["+(Array(field.getName.toString, field.getType.toString, field.get(this).toString)).mkString(", ") +"]"
         field.setAccessible(false)
       }
-
       return "["+ (buffer.toList.toArray).mkString(", ") +"]"
-
     }
 
-
   }
+
 
   class Point(xv: Int, yv: Int) extends Debug {
     var x: Int = xv
     var y: Int = yv
     var a: String = "test"
+  }
+
+  //Pomocnicze, tylko do sprawdzenia wyświetlenia
+
+  def printListsOfData(data: List[Data]): Unit = {
+    print("[")
+    for(x <- data){
+      x.printIt()
+      print(", ")
+    }
+    print("]")
+    println()
+  }
+
+  def printVargsTuple(data: List[(String, Any, Any)]): Unit = {
+    print("[")
+    for(x <- data){
+      print("["+x._1 + ", " + x._2 + ", "+ x._3+"]")
+      print(", ")
+    }
+    print("]")
+    println()
   }
 
   def main(args: Array[String]): Unit = {
@@ -162,6 +225,7 @@ object Main {
     val streamTestList1 = Stream(1,2,7,4,8,3)
     println( eachNElementStream(streamTestList1, 1, 4).toList == List(1,2,7,4))
     println( eachNElementStream(streamTestList1, 2, 6).toList == List(1, 7, 8))
+
 
     //Zadanie 2
     println()
@@ -196,7 +260,11 @@ object Main {
 
     var p : Point = new Point(3, 4);
     println(p.debugName());
-    println(p.debugVars());
+    println(p.debugVarsString());
+
+
+    printListsOfData(p.debugVars());
+    printVargsTuple(p.debugVarsTuple())
 
 
   }
